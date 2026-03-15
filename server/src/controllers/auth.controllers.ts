@@ -23,12 +23,13 @@ export const login = async (req: Request, res: Response) => {
         const { email, password } = req.body;
 
         if (!email || !password) {
+            console.log("here", email, password);
             res.status(400).json({ message: "invalid format" });
             return;
         }
 
         const token = await authservices.login(email, password);
-        res.cookie(token);
+        res.cookie("token", token);
         res.status(200).json({ token });
 
     } catch (error: any) {
