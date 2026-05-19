@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/dist/client/link";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -28,6 +29,7 @@ const LoginPage = () => {
 
       router.push("/dashboard");
     } catch (err: any) {
+      console.error("Login error:", err);
       setError(err.response?.data?.message || "Login failed");
     }
   };
@@ -53,7 +55,10 @@ const LoginPage = () => {
 
         <button type="submit">Login</button>
       </form>
-
+      <p style={{ marginTop: "15px", textAlign: "center" }}>
+      Don't have an account?{" "}
+      <Link href="/register">Register</Link>
+    </p>
       {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );

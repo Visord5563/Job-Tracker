@@ -1,8 +1,14 @@
 import prisma from "../config/prissma";
 
-export const createApplication = async (body: any, userId: string) =>{
+
+export const createApplication = async (body: any, userId: string) => {
     const result = await prisma.application.create({
-        data: {...body, userId}
+        data: {
+            ...body,
+            appliedAt: new Date(body.appliedAt),
+            deadline: body.deadline ? new Date(body.deadline) : undefined,
+            userId
+        }
     });
     return result;
 };
