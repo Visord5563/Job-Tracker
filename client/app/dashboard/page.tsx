@@ -7,10 +7,16 @@ import ApplicationForm from "@/components/ApplicationForm";
 import { useAuth } from "@/context/AuthContext";
 import type { Application } from "@/types/application";
 
+const statusStyles: Record<string, string> = {
+  APPLIED: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  INTERVIEW: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  OFFER: "bg-green-500/10 text-green-400 border-green-500/20",
+  REJECTED: "bg-red-500/10 text-red-400 border-red-500/20",
+};
+
 const DashboardPage = () => {
   const router = useRouter();
   const { logout } = useAuth();
-
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,15 +29,13 @@ const DashboardPage = () => {
       const res = await api.get("/api/applications");
       setApplications(res.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch applications");
+      setError(err.response?.data?.message || "Failed to fetch");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
+  useEffect(() => { fetchApplications(); }, []);
 
   const handleLogout = async () => {
     await api.post("/api/auth/logout");
@@ -44,190 +48,191 @@ const DashboardPage = () => {
   };
 
   const handleUpdateSuccess = (updatedApp: Application) => {
-    setApplications(applications.map((app) =>
-      app.id === updatedApp.id ? updatedApp : app
-    ));
+    setApplications(applications.map((a) => a.id === updatedApp.id ? updatedApp : a));
   };
 
   const handleDelete = async (id: string) => {
     try {
       await api.delete(`/api/applications/${id}`);
-      setApplications(applications.filter((app) => app.id !== id));
-    } catch (err: any) {
-      alert("Failed to delete application");
+      setApplications(applications.filter((a) => a.id !== id));
+    } catch {
+      alert("Failed to delete");
     }
   };
 
-  // --- Stats ---
-  const stats = {
-    total: applications.length,
-    applied: applications.filter((a) => a.status === "APPLIED").length,
-    interview: applications.filter((a) => a.status === "INTERVIEW").length,
-    offer: applications.filter((a) => a.status === "OFFER").length,
-    rejected: applications.filter((a) => a.status === "REJECTED").length,
-  };
-
-  // --- Filter ---
-  const filteredApplications = filter === "ALL"
-    ? applications
-    : applications.filter((a) => a.status === filter);
-
-  // --- Overdue ---
   const isOverdue = (app: Application) => {
     if (!app.deadline) return false;
-    return new Date(app.deadline) < new Date() && app.status !== "OFFER" && app.status !== "REJECTED";
+    return new Date(app.deadline) < new Date() &&
+      app.status !== "OFFER" && app.status !== "REJECTED";
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  const stats = [
+    { label: "Total", value: applications.length, color: "text-white" },
+    { label: "Applied", value: applications.filter(a => a.status === "APPLIED").length, color: "text-blue-400" },
+    { label: "Interview", value: applications.filter(a => a.status === "INTERVIEW").length, color: "text-yellow-400" },
+    { label: "Offers", value: applications.filter(a => a.status === "OFFER").length, color: "text-green-400" },
+    { label: "Rejected", value: applications.filter(a => a.status === "REJECTED").length, color: "text-red-400" },
+  ];
+
+  const filtered = filter === "ALL" ? applications : applications.filter(a => a.status === filter);
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <p className="text-red-400">{error}</p>
+    </div>
+  );
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2>My Applications</h2>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={() => setShowModal(true)}>+ Add Application</button>
-          <button onClick={handleLogout} style={{ background: "red", color: "white" }}>
-            Logout
+      {/* Navbar */}
+      <nav className="border-b border-neutral-800 px-6 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center">
+              <span className="text-black font-bold text-sm">J</span>
+            </div>
+            <span className="font-semibold text-white">JobTrackr</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="text-neutral-400 hover:text-white text-sm transition-colors"
+          >
+            Sign out
           </button>
         </div>
-      </div>
+      </nav>
 
-      {/* Stats Row */}
-      <div style={{ display: "flex", gap: "15px", marginTop: "20px" }}>
-        {[
-          { label: "Total", value: stats.total, color: "#333" },
-          { label: "Applied", value: stats.applied, color: "blue" },
-          { label: "Interview", value: stats.interview, color: "orange" },
-          { label: "Offer", value: stats.offer, color: "green" },
-          { label: "Rejected", value: stats.rejected, color: "red" },
-        ].map((stat) => (
-          <div key={stat.label} style={{
-            padding: "15px 20px",
-            border: "1px solid #eee",
-            borderRadius: "8px",
-            textAlign: "center",
-            minWidth: "80px"
-          }}>
-            <p style={{ color: stat.color, fontSize: "24px", fontWeight: "bold", margin: 0 }}>
-              {stat.value}
-            </p>
-            <p style={{ margin: 0, fontSize: "12px", color: "#666" }}>{stat.label}</p>
+      <div className="max-w-6xl mx-auto px-6 py-8">
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">My Applications</h1>
+            <p className="text-neutral-500 text-sm mt-1">Track and manage all your job applications</p>
           </div>
-        ))}
-      </div>
-
-      {/* Filter Buttons */}
-      <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-        {["ALL", "APPLIED", "INTERVIEW", "OFFER", "REJECTED"].map((f) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={{
-              padding: "6px 14px",
-              borderRadius: "20px",
-              border: "1px solid #ccc",
-              background: filter === f ? "#333" : "white",
-              color: filter === f ? "white" : "#333",
-              cursor: "pointer"
-            }}
+            onClick={() => setShowModal(true)}
+            className="bg-white text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-neutral-200 transition-colors flex items-center gap-2"
           >
-            {f}
+            <span>+</span> Add Application
           </button>
-        ))}
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-5 gap-4 mb-8">
+          {stats.map((stat) => (
+            <div key={stat.label} className="bg-[#111] border border-neutral-800 rounded-xl p-4">
+              <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
+              <p className="text-neutral-500 text-xs mt-1">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Filter */}
+        <div className="flex gap-2 mb-6">
+          {["ALL", "APPLIED", "INTERVIEW", "OFFER", "REJECTED"].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                filter === f
+                  ? "bg-white text-black border-white"
+                  : "bg-transparent text-neutral-400 border-neutral-800 hover:border-neutral-600"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        {/* Table */}
+        {filtered.length === 0 ? (
+          <div className="bg-[#111] border border-neutral-800 rounded-xl p-12 text-center">
+            <p className="text-neutral-500">No applications found</p>
+            <button
+              onClick={() => setShowModal(true)}
+              className="mt-4 text-sm text-white underline underline-offset-4"
+            >
+              Add your first application
+            </button>
+          </div>
+        ) : (
+          <div className="bg-[#111] border border-neutral-800 rounded-xl overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-neutral-800">
+                  {["Company", "Role", "Status", "Applied Date", "Deadline", "Actions"].map((h) => (
+                    <th key={h} className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-800/50">
+                {filtered.map((app) => (
+                  <tr key={app.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium">{app.company}</td>
+                    <td className="px-4 py-3 text-sm text-neutral-400">{app.role}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statusStyles[app.status]}`}>
+                        {app.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-400">
+                      {new Date(app.appliedAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-400">
+                      {app.deadline ? (
+                        <span className="flex items-center gap-2">
+                          {new Date(app.deadline).toLocaleDateString()}
+                          {isOverdue(app) && (
+                            <span className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full">
+                              Overdue
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-neutral-700">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingApp(app)}
+                          className="text-xs text-neutral-400 hover:text-white border border-neutral-800 hover:border-neutral-600 px-3 py-1 rounded-lg transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(app.id)}
+                          className="text-xs text-red-500/70 hover:text-red-400 border border-neutral-800 hover:border-red-500/30 px-3 py-1 rounded-lg transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Table */}
-      {filteredApplications.length === 0 ? (
-        <p style={{ marginTop: "20px" }}>No applications found</p>
-      ) : (
-        <table border={1} cellPadding={10} style={{ width: "100%", marginTop: "20px" }}>
-          <thead>
-            <tr>
-              <th>Company</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Applied Date</th>
-              <th>Deadline</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredApplications.map((app) => (
-              <tr key={app.id}>
-                <td>{app.company}</td>
-                <td>{app.role}</td>
-                <td>
-                  <span style={{
-                    padding: "3px 10px",
-                    borderRadius: "20px",
-                    fontSize: "12px",
-                    background:
-                      app.status === "APPLIED" ? "#dbeafe" :
-                      app.status === "INTERVIEW" ? "#fef9c3" :
-                      app.status === "OFFER" ? "#dcfce7" :
-                      "#fee2e2",
-                    color:
-                      app.status === "APPLIED" ? "blue" :
-                      app.status === "INTERVIEW" ? "orange" :
-                      app.status === "OFFER" ? "green" :
-                      "red"
-                  }}>
-                    {app.status}
-                  </span>
-                </td>
-                <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
-                <td>
-                  {app.deadline ? (
-                    <span>
-                      {new Date(app.deadline).toLocaleDateString()}
-                      {isOverdue(app) && (
-                        <span style={{
-                          marginLeft: "8px",
-                          background: "red",
-                          color: "white",
-                          padding: "2px 8px",
-                          borderRadius: "10px",
-                          fontSize: "11px"
-                        }}>
-                          Overdue
-                        </span>
-                      )}
-                    </span>
-                  ) : "-"}
-                </td>
-                <td style={{ display: "flex", gap: "8px" }}>
-                  <button onClick={() => setEditingApp(app)}>Edit</button>
-                  <button
-                    onClick={() => handleDelete(app.id)}
-                    style={{ color: "red" }}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {/* Modals */}
       {showModal && (
-        <ApplicationForm
-          onClose={() => setShowModal(false)}
-          onSuccess={handleCreateSuccess}
-        />
+        <ApplicationForm onClose={() => setShowModal(false)} onSuccess={handleCreateSuccess} />
       )}
-
       {editingApp && (
         <ApplicationForm
           onClose={() => setEditingApp(null)}
-          onSuccess={(updatedApp) => {
-            handleUpdateSuccess(updatedApp);
-            setEditingApp(null);
-          }}
+          onSuccess={(updatedApp) => { handleUpdateSuccess(updatedApp); setEditingApp(null); }}
           initialData={editingApp}
         />
       )}

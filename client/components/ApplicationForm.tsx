@@ -4,8 +4,6 @@ import { useState } from "react";
 import api from "@/lib/axios";
 import type { Application } from "@/types/application";
 
-
-
 type Props = {
   onClose: () => void;
   onSuccess: (app: Application) => void;
@@ -14,46 +12,36 @@ type Props = {
 
 const ApplicationForm = ({ onClose, onSuccess, initialData }: Props) => {
   const isEditMode = !!initialData;
-
   const [company, setCompany] = useState(initialData?.company || "");
   const [role, setRole] = useState(initialData?.role || "");
   const [status, setStatus] = useState(initialData?.status || "APPLIED");
   const [appliedAt, setAppliedAt] = useState(
-    initialData?.appliedAt
-      ? new Date(initialData.appliedAt).toISOString().split("T")[0]
-      : ""
+    initialData?.appliedAt ? new Date(initialData.appliedAt).toISOString().split("T")[0] : ""
   );
   const [deadline, setDeadline] = useState(
-    initialData?.deadline
-      ? new Date(initialData.deadline).toISOString().split("T")[0]
-      : ""
+    initialData?.deadline ? new Date(initialData.deadline).toISOString().split("T")[0] : ""
   );
   const [jobUrl, setJobUrl] = useState(initialData?.jobUrl || "");
   const [notes, setNotes] = useState(initialData?.notes || "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const inputClass = "w-full bg-[#1a1a1a] border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors";
+  const labelClass = "text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1.5 block";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const payload = {
-        company,
-        role,
-        status,
-        appliedAt,
+        company, role, status, appliedAt,
         deadline: deadline || undefined,
         jobUrl: jobUrl || undefined,
         notes: notes || undefined,
       };
-
-      let res;
-      if (isEditMode) {
-        res = await api.put(`/api/applications/${initialData.id}`, payload);
-      } else {
-        res = await api.post("/api/applications", payload);
-      }
-
+      const res = isEditMode
+        ? await api.put(`/api/applications/${initialData.id}`, payload)
+        : await api.post("/api/applications", payload);
       onSuccess(res.data);
       onClose();
     } catch (err: any) {
@@ -64,50 +52,34 @@ const ApplicationForm = ({ onClose, onSuccess, initialData }: Props) => {
   };
 
   return (
-    <div style={{
-      position: "fixed", top: 0, left: 0,
-      width: "100%", height: "100%",
-      backgroundColor: "rgba(0,0,0,0.5)",
-      display: "flex", justifyContent: "center", alignItems: "center",
-      zIndex: 1000
-    }}>
-      <div style={{
-        background: "white", padding: "30px",
-        borderRadius: "8px", width: "400px",
-        maxHeight: "90vh", overflowY: "auto"
-      }}>
-        <h3>{isEditMode ? "Edit Application" : "Add New Application"}</h3>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+      <div className="bg-[#111] border border-neutral-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "10px" }}>
-            <label>Company *</label>
-            <input
-              type="text"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              required
-              style={{ width: "100%", padding: "8px" }}
-            />
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800">
+          <h3 className="font-semibold text-white">
+            {isEditMode ? "Edit Application" : "Add New Application"}
+          </h3>
+          <button onClick={onClose} className="text-neutral-500 hover:text-white transition-colors text-xl leading-none">
+            ×
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className={labelClass}>Company *</label>
+            <input type="text" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="e.g. Google" required className={inputClass} />
           </div>
 
-          <div style={{ marginBottom: "10px" }}>
-            <label>Role *</label>
-            <input
-              type="text"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              required
-              style={{ width: "100%", padding: "8px" }}
-            />
+          <div>
+            <label className={labelClass}>Role *</label>
+            <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Frontend Engineer" required className={inputClass} />
           </div>
 
-          <div style={{ marginBottom: "10px" }}>
-            <label>Status *</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              style={{ width: "100%", padding: "8px" }}
-            >
+          <div>
+            <label className={labelClass}>Status *</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
               <option value="APPLIED">Applied</option>
               <option value="INTERVIEW">Interview</option>
               <option value="OFFER">Offer</option>
@@ -115,53 +87,45 @@ const ApplicationForm = ({ onClose, onSuccess, initialData }: Props) => {
             </select>
           </div>
 
-          <div style={{ marginBottom: "10px" }}>
-            <label>Applied Date *</label>
-            <input
-              type="date"
-              value={appliedAt}
-              onChange={(e) => setAppliedAt(e.target.value)}
-              required
-              style={{ width: "100%", padding: "8px" }}
-            />
+          <div>
+            <label className={labelClass}>Applied Date *</label>
+            <input type="date" value={appliedAt} onChange={(e) => setAppliedAt(e.target.value)} required className={inputClass} />
           </div>
 
-          <div style={{ marginBottom: "10px" }}>
-            <label>Deadline</label>
-            <input
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              style={{ width: "100%", padding: "8px" }}
-            />
+          <div>
+            <label className={labelClass}>Deadline</label>
+            <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputClass} />
           </div>
 
-          <div style={{ marginBottom: "10px" }}>
-            <label>Job URL</label>
-            <input
-              type="url"
-              value={jobUrl}
-              onChange={(e) => setJobUrl(e.target.value)}
-              style={{ width: "100%", padding: "8px" }}
-            />
+          <div>
+            <label className={labelClass}>Job URL</label>
+            <input type="url" value={jobUrl} onChange={(e) => setJobUrl(e.target.value)} placeholder="https://..." className={inputClass} />
           </div>
 
-          <div style={{ marginBottom: "10px" }}>
-            <label>Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={{ width: "100%", padding: "8px" }}
-            />
+          <div>
+            <label className={labelClass}>Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any notes about this application..." rows={3} className={inputClass} />
           </div>
 
-          {error && <p style={{ color: "red" }}>{error}</p>}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
 
-          <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-            <button type="submit" disabled={loading}>
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-white text-black font-medium text-sm py-2.5 rounded-lg hover:bg-neutral-200 transition-colors disabled:opacity-50"
+            >
               {loading ? "Saving..." : isEditMode ? "Update" : "Add Application"}
             </button>
-            <button type="button" onClick={onClose}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-transparent text-neutral-400 font-medium text-sm py-2.5 rounded-lg border border-neutral-800 hover:border-neutral-600 hover:text-white transition-colors"
+            >
               Cancel
             </button>
           </div>

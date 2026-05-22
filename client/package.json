@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tailwindcss/forms": "^0.5.11",
     "axios": "^1.14.0",
     "js-cookie": "^3.0.5",
     "next": "16.1.6",
@@ -23,7 +24,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
+    "tailwindcss": "^4.3.0",
     "typescript": "^5"
   }
 }
